@@ -1,23 +1,27 @@
 var toughCookie = require('tough-cookie');
 var request = require('request');
 
-var handle_error = function(res) {
-	if (!res||res.statusCode!=200) {
-		throw res.statusMessage;
+var handle_error = function(res, error) {
+	if (error || res.statusCode != 200) {
+		console.log("An error occurred.");
+		console.log("Status code: " + res.statusCode);
+		console.log("Error: " + error);
+		throw error;
 	}
-}
-var find_my_iphone = function(apple_id,password,device_name,callback) {
+};
+
+var find_my_iphone = function(apple_id, password, device_name, callback) {
 	var iRequest = request.defaults({jar: true,headers:{"Origin":"https://www.icloud.com"}});
 	iRequest.post({"url":'https://setup.icloud.com/setup/ws/1/login', json: {'apple_id':apple_id,'password':password}},
 		function(error,response,body) {
-			handle_error(response);
+			handle_error(response, error);
 			var url = body.webservices.findme.url;
 			iRequest.post({"url":url+"/fmipservice/client/web/initClient",json:{}},
 				function(error,response,body) {
-					handle_error(response);
+					handle_error(response, error);
 					var devices = {}, device, id;
 					// If no device is passed, take the first one
-					if (!device_name && body.content.length>0) {
+					if (!device_name && body.content.length > 0) {
 						console.log(body.content[0]);
 						id = body.content[0].id;
 					}
@@ -32,7 +36,7 @@ var find_my_iphone = function(apple_id,password,device_name,callback) {
 					if (id) {
 						iRequest.post({"url":url+"/fmipservice/client/web/playSound",json:{"subject":"Find My iPhone Alert","device":id}},
 							function(error,response,body) {
-								handle_error(response);
+								handle_error(response, error);
 								if (callback) {
 									callback();
 								}
